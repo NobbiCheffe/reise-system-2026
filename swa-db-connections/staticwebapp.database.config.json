@@ -1,0 +1,42 @@
+{
+  "$schema": "https://github.com/Azure/data-api-builder/releases/download/v0.10.27/dab.draft.schema.json",
+  "runtime": {
+    "rest": {
+      "enabled": true,
+      "path": "/api"
+    },
+    "host": {
+      "mode": "production",
+      "cors": {
+        "origins": ["https://deine-website.de"],
+        "allow-methods": ["GET", "POST"]
+      }
+    }
+  },
+  "entities": {
+    "Tour": {
+      "source": "tbl_Touren",
+      "permissions": [{ "role": "anonymous", "actions": ["read"] }]
+    },
+    "Termin": {
+      "source": "tbl_Termine",
+      "permissions": [{ "role": "anonymous", "actions": ["read"] }]
+    },
+    "Buchung": {
+      "source": "tbl_Buchungen",
+      "permissions": [{ "role": "anonymous", "actions": ["create", "read"] }]
+    },
+    "Teilnehmer": {
+      "source": "tbl_Teilnehmer",
+      "permissions": [{ "role": "anonymous", "actions": ["create", "read"] }]
+    },
+    "Kunde": {
+      "source": "tbl_Kunden",
+      "permissions": [{ "role": "anonymous", "actions": ["create", "read"] }]
+    },
+    "Finanzen": {
+      "source": "vw_Zahlungsstatus",
+      "permissions": [{ "role": "authenticated", "actions": ["read"] }]
+    }
+  }
+}
