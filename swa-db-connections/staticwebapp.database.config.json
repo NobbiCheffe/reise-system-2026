@@ -37,6 +37,6 @@
     "Finanzen": {
       "source": "vw_Zahlungsstatus",
       "permissions": [{ "role": "authenticated", "actions": ["read"] }]
-    }
+     }
   }
 }
