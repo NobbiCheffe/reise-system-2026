@@ -11,6 +11,8 @@ jobs:
     name: Build and Deploy Job
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: true
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -21,4 +23,4 @@ jobs:
           app_location: "/" 
           api_location: "" 
           output_location: ""
-          skip_app_build: true # Das ist der wichtigste Befehl für dich!
+          skip_app_build: true # <--- Das ist dein Retter!
