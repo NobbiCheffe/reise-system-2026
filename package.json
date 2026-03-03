@@ -2,7 +2,11 @@
   "name": "bergauf-app",
   "version": "1.0.0",
   "scripts": {
-    "build": "echo 'Build-Prozess gestartet - DB-Check folgt...'"
+    "build": "echo 'Prüfe DB-Konfig...' && node -e \"const fs = require('fs'); if (fs.existsSync('staticwebapp.database.config.json')) { console.log('DB Config gefunden!'); } else { console.error('DB Config fehlt!'); process.exit(1); }\"",
+    "start": "swa start http://localhost:8080 --data-api-location .",
+    "test-db": "node -r dotenv/config -e \"console.log('Verbindung wird getestet für:', process.env.DATABASE_CONNECTION_STRING ? 'Vorhanden' : 'Fehlt!')\"" 
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1"
   }
 }
-
