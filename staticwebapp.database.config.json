@@ -8,7 +8,7 @@
   },
   "entities": {
     "Tour": {
-      "source": "dbo.tbl_Touren",
+      "source": "tbl_Touren",
       "permissions": [
         {
           "role": "anonymous",
