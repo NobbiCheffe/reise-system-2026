@@ -6,23 +6,9 @@
       "path": "/data-api"
     }
   },
-  "entities": {
-    "Tour": {
-      "source": "tbl_Touren",
-      "permissions": [
-        {
-          "role": "anonymous",
-          "actions": ["read"]
-        }
-      ],
-      "mappings": {
-        "TourID": "id",
-        "TourCode": "TourCode",
-        "Titel": "Titel",
-        "Region": "Region",
-        "Beschreibung_Kurz": "Beschreibung_Kurz",
-        "Basispreis_Netto_EK": "Basispreis_Netto_EK",
-        "Basispreis_Brutto_VK": "Basispreis_Brutto_VK"
-      }
-    }
+"entities": {
+  "Test": {
+    "source": "dbo.Test",
+    "permissions": [{"role": "anonymous", "actions": ["read"]}]
   }
+}
