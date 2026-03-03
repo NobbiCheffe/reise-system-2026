@@ -2,6 +2,6 @@
   "name": "bergauf-app",
   "version": "1.0.0",
   "scripts": {
-    "build": "echo 'No build needed'"
+    "build": "echo 'Build-Prozess gestartet - DB-Check folgt...'"
   }
 }
