@@ -1,14 +1,12 @@
 const { app } = require('@azure/functions');
 const { Connection, Request } = require('tedious');
 
-// Registrierung der Funktion (V4 Modell)
 app.http('GetTouren', {
     methods: ['GET'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
-        context.log(`API-Aufruf für GetTouren gestartet.`);
+        context.log(`API-Aufruf: Lade Touren aus dem neuen Bergauf-Schema.`);
 
-        // Deine SQL-Konfiguration
         const config = {
             authentication: {
                 options: {
@@ -22,7 +20,7 @@ app.http('GetTouren', {
                 database: "Bergauf-Datenbank",
                 encrypt: true,
                 trustServerCertificate: false,
-                rowCollectionOnRequestCompletion: true // Wichtig für V4
+                rowCollectionOnRequestCompletion: true
             }
         };
 
@@ -31,31 +29,23 @@ app.http('GetTouren', {
             
             connection.on('connect', err => {
                 if (err) {
-                    context.error('Datenbank-Verbindungsfehler:', err);
-                    resolve({ 
-                        status: 500, 
-                        body: `Fehler: Verbindung zur SQL-DB fehlgeschlagen (${err.message})` 
-                    });
+                    context.error('Verbindungsfehler:', err);
+                    resolve({ status: 500, body: "DB-Verbindungsfehler" });
                 } else {
+                    // WICHTIG: Hier nutzen wir jetzt 'Kategorie' statt 'Region'
                     const sqlRequest = new Request(
-                        "SELECT TourID, TourCode, Titel, Region FROM tbl_Touren", 
+                        "SELECT TourID, TourCode, Titel, Kategorie FROM tbl_Touren", 
                         (err, rowCount, rows) => {
                             if (err) {
-                                context.error('Abfragefehler:', err);
-                                resolve({ status: 500, body: "Fehler bei der SQL-Abfrage." });
+                                context.error('Query-Fehler:', err);
+                                resolve({ status: 500, body: "Fehler bei der Abfrage" });
                             } else {
-                                // Daten von SQL-Format in JSON umwandeln
                                 const data = rows.map(row => {
                                     const item = {};
                                     row.forEach(col => { item[col.metadata.colName] = col.value; });
                                     return item;
                                 });
-
-                                context.log(`${rowCount} Touren erfolgreich geladen.`);
-                                resolve({ 
-                                    status: 200, 
-                                    jsonBody: data 
-                                });
+                                resolve({ status: 200, jsonBody: data });
                             }
                             connection.close();
                         }
