@@ -1,1 +1,38 @@
 <h1>Reise-Management-System 2026 API läuft</h1>
+<h2>Unsere aktuellen Touren</h2>
+<ul id="touren-liste">
+    <li>Lade Touren...</li>
+</ul>
+
+<script>
+async function ladeTouren() {
+    try {
+        // Wir rufen deine neue Azure Function auf
+        const response = await fetch('/api/GetTouren');
+        
+        if (!response.ok) {
+            throw new Error("Fehler beim Laden: " + response.status);
+        }
+
+        const daten = await response.json();
+        
+        // Den Platzhalter-Text löschen
+        const liste = document.getElementById('touren-liste');
+        liste.innerHTML = '';
+
+        // Jede Tour aus der Datenbank in die Liste schreiben
+        daten.forEach(tour => {
+            const punkt = document.createElement('li');
+            punkt.textContent = `${tour.Titel} - Region: ${tour.Region}`;
+            liste.appendChild(punkt);
+        });
+
+    } catch (fehler) {
+        console.error("Da hat was nicht geklappt:", fehler);
+        document.getElementById('touren-liste').innerHTML = "<li>Daten konnten nicht geladen werden.</li>";
+    }
+}
+
+// Startet den Ladevorgang, sobald die Seite offen ist
+window.onload = ladeTouren;
+</script>
