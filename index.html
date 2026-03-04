@@ -1,38 +1,113 @@
-<h1>Reise-Management-System 2026 API läuft</h1>
-<h2>Unsere aktuellen Touren</h2>
-<ul id="touren-liste">
-    <li>Lade Touren...</li>
-</ul>
-
-<script>
-async function ladeTouren() {
-    try {
-        // Wir rufen deine neue Azure Function auf
-        const response = await fetch('/api/GetTouren');
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bergauf Tourenverwaltung 2026</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f7f6;
+            --text: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: var(--primary); margin-bottom: 30px; }
         
-        if (!response.ok) {
-            throw new Error("Fehler beim Laden: " + response.status);
+        /* Container für die Karten */
+        #tour-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
         }
 
-        const daten = await response.json();
+        /* Design der einzelnen Tour-Karte */
+        .tour-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            border-left: 5px solid var(--accent);
+        }
+        .tour-card:hover { transform: translateY(-5px); }
+        .tour-card h3 { margin: 0 0 10px 0; color: var(--primary); }
+        .tour-card p { margin: 5px 0; font-size: 0.9em; }
+        .tour-code { font-weight: bold; color: #7f8c8d; }
         
-        // Den Platzhalter-Text löschen
-        const liste = document.getElementById('touren-liste');
-        liste.innerHTML = '';
+        .loading, .error {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
 
-        // Jede Tour aus der Datenbank in die Liste schreiben
-        daten.forEach(tour => {
-            const punkt = document.createElement('li');
-            punkt.textContent = `${tour.Titel} - Region: ${tour.Region}`;
-            liste.appendChild(punkt);
-        });
+    <h1>Bergauf: Unsere Touren</h1>
 
-    } catch (fehler) {
-        console.error("Da hat was nicht geklappt:", fehler);
-        document.getElementById('touren-liste').innerHTML = "<li>Daten konnten nicht geladen werden.</li>";
-    }
-}
+    <div id="tour-container">
+        <div class="loading">Verbindung zur Datenbank wird aufgebaut...</div>
+    </div>
 
-// Startet den Ladevorgang, sobald die Seite offen ist
-window.onload = ladeTouren;
-</script>
+    <script>
+        async function fetchTouren() {
+            const container = document.getElementById('tour-container');
+            
+            try {
+                // Hier rufen wir deine neue Azure Function auf
+                const response = await fetch('/api/GetTouren');
+                
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+
+                const touren = await response.json();
+
+                // Falls keine Daten da sind
+                if (touren.length === 0) {
+                    container.innerHTML = '<div class="loading">Aktuell sind keine Touren in der Datenbank hinterlegt.</div>';
+                    return;
+                }
+
+                // Container leeren und Karten einfügen
+                container.innerHTML = '';
+                touren.forEach(tour => {
+                    const card = document.createElement('div');
+                    card.className = 'tour-card';
+                    card.innerHTML = `
+                        <p class="tour-code">Code: ${tour.TourCode || 'N/A'}</p>
+                        <h3>${tour.Titel || 'Unbenannte Tour'}</h3>
+                        <p><strong>Region:</strong> ${tour.Region || 'Nicht angegeben'}</p>
+                        <p><em>ID: ${tour.TourID}</em></p>
+                    `;
+                    container.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error("Fehler beim Laden:", err);
+                container.innerHTML = `
+                    <div class="error">
+                        <p style="color: red; font-weight: bold;">Fehler beim Laden der Daten!</p>
+                        <p>Stelle sicher, dass die Azure Function unter /api/GetTouren läuft.</p>
+                    </div>`;
+            }
+        }
+
+        // Starte die Abfrage, sobald die Seite geladen ist
+        window.onload = fetchTouren;
+    </script>
+</body>
+</html>
