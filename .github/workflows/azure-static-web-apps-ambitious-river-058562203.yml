@@ -39,10 +39,9 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_AMBITIOUS_RIVER_058562203 }}
           action: "upload"
          ###### Repository/Build Configurations ######
-          app_location: "/"          # Wir starten im Hauptverzeichnis
-          api_location: "api"        # Deine API liegt in /api
-          output_location: "frontend" # <--- DAS IST DIE LÖSUNG! 
-                                     # Hier liegen deine HTML-Dateien (index.html)
+          app_location: "frontend"   # <--- Wir gehen direkt in den Ordner
+          api_location: "api"        # Die API bleibt davon unberührt im Root
+          output_location: ""        # Da wir im Ordner sind, ist der Output genau hier
           
           skip_app_build: true       # Wir sagen weiterhin: "Nichts bauen, nur kopieren"
           
@@ -59,6 +58,7 @@ jobs:
         uses: Azure/static-web-apps-deploy@v1
         with:
           action: "close"
+
 
 
 
