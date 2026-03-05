@@ -26,21 +26,28 @@ app.http('GetTermine', {
             
             connection.on('connect', err => {
                 if (err) {
+                    context.error('DB-Verbindungsfehler:', err);
                     resolve({ status: 500, body: "DB-Verbindungsfehler" });
                 } else {
-                    // Wir greifen direkt auf den View zu, den wir oben erstellt haben
                     const sqlRequest = new Request(
                         "SELECT * FROM vw_OeffentlicheReisen ORDER BY Startdatum", 
                         (err, rowCount, rows) => {
                             if (err) {
+                                context.error('Query-Fehler:', err);
                                 resolve({ status: 500, body: "Fehler beim Abruf der Termine" });
                             } else {
-                                const data = rows.map(row => {
+                                const list = rows.map(row => {
                                     const item = {};
                                     row.forEach(col => { item[col.metadata.colName] = col.value; });
                                     return item;
                                 });
-                                resolve({ status: 200, jsonBody: data });
+
+                                // HIER IST DIE ÄNDERUNG: 
+                                // Die Liste wird in das Objekt { data: ... } gepackt
+                                resolve({ 
+                                    status: 200, 
+                                    jsonBody: { data: list } 
+                                });
                             }
                             connection.close();
                         }
