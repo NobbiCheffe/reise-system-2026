@@ -5,7 +5,7 @@ app.http('GetTermine', {
     methods: ['GET'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
-        context.log(`Lade aktuelle Termine und Verfügbarkeiten...`);
+        context.log(`Lade Termine für TablePress (Naked Array Mode)...`);
 
         const config = {
             authentication: {
@@ -23,31 +23,23 @@ app.http('GetTermine', {
 
         return new Promise((resolve) => {
             const connection = new Connection(config);
-            
             connection.on('connect', err => {
                 if (err) {
-                    context.error('DB-Verbindungsfehler:', err);
-                    resolve({ status: 500, body: "DB-Verbindungsfehler" });
+                    resolve({ status: 500, body: "Fehler" });
                 } else {
                     const sqlRequest = new Request(
                         "SELECT * FROM vw_OeffentlicheReisen ORDER BY Startdatum", 
                         (err, rowCount, rows) => {
                             if (err) {
-                                context.error('Query-Fehler:', err);
-                                resolve({ status: 500, body: "Fehler beim Abruf der Termine" });
+                                resolve({ status: 500, body: "Fehler" });
                             } else {
                                 const list = rows.map(row => {
                                     const item = {};
                                     row.forEach(col => { item[col.metadata.colName] = col.value; });
                                     return item;
                                 });
-
-                                // HIER IST DIE ÄNDERUNG: 
-                                // Die Liste wird in das Objekt { data: ... } gepackt
-                                resolve({ 
-                                    status: 200, 
-                                    jsonBody: { data: list } 
-                                });
+                                // Wir senden wieder das "nackte" Array [...]
+                                resolve({ status: 200, jsonBody: list });
                             }
                             connection.close();
                         }
