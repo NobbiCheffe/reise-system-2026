@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bergauf CRM - Kundenverwaltung</title>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>Bergauf Reise-Management</h1>
+        <nav>
+          <strong>Kundenliste</strong> | Buchungen | Rooming-Lists
+        </nav>
+      </header>
+      
+      <main>
+        <section>
+          <h2>Aktuelle Kunden</h2>
+          <table id="kunden-tabelle" border="1" style="width:100%; text-align:left; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f2f2f2;">
+                <th>ID</th>
+                <th>Name</th>
+                <th>Ort</th>
+                <th>E-Mail</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody id="kunden-daten">
+              <tr><td colspan="5">Lade Kundendaten...</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
