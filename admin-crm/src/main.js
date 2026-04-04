@@ -1,6 +1,6 @@
 /**
  * Bergauf CRM - Master Control (main.js)
- * Stand: April 2026 - Inklusive Familien-Feld (Weg A)
+ * Stand: April 2026 - Layout-Upgrade & PLZ-Autofill
  */
 
 let allKunden = [];
@@ -9,8 +9,6 @@ let allKunden = [];
 // 1. INITIALISIERUNG & NAVIGATION
 // ---------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Bergauf CRM Zentrale wird hochgefahren...");
-
     document.getElementById('btn-kunden').addEventListener('click', () => showSection('kunden'));
     document.getElementById('btn-reisen').addEventListener('click', () => showSection('reisen'));
     document.getElementById('kunden-suche').addEventListener('input', handleKundenSuche);
@@ -22,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('customer-modal').style.display = 'none';
         });
     }
-
     loadKunden();
 });
 
@@ -46,7 +43,25 @@ function formatDate(isoString) {
 }
 
 // ---------------------------------------------------------
-// 2. KUNDEN-VERWALTUNG & DATENBLATT
+// 2. PLZ-AUTOMATIK
+// ---------------------------------------------------------
+window.lookupPLZ = async function(plz) {
+    if (plz.length === 5) {
+        try {
+            const response = await fetch(`https://api.zippopotam.us/de/${plz}`);
+            if (response.ok) {
+                const data = await response.json();
+                const city = data.places[0]['place name'];
+                document.getElementById('edit-ort').value = city;
+            }
+        } catch (err) {
+            console.error("PLZ-Fehler:", err);
+        }
+    }
+};
+
+// ---------------------------------------------------------
+// 3. KUNDEN-VERWALTUNG & DETAIL-ANSICHT
 // ---------------------------------------------------------
 
 async function loadKunden() {
@@ -54,17 +69,14 @@ async function loadKunden() {
         const response = await fetch('/api/getKunden');
         allKunden = await response.json();
         renderKundenTable(allKunden);
-    } catch (err) {
-        console.error("Fehler beim Abruf der Kundendaten:", err);
-    }
+    } catch (err) { console.error(err); }
 }
 
 function renderKundenTable(daten) {
     const tableBody = document.getElementById('kunden-daten');
     if (!tableBody) return;
-
     tableBody.innerHTML = daten.map(k => `
-        <tr onclick="window.openCustomerDetails(${k.Kunden_ID})" style="cursor: pointer;" title="Klicken für vollständiges Datenblatt">
+        <tr onclick="window.openCustomerDetails(${k.Kunden_ID})" style="cursor: pointer;">
             <td>${k.Kunden_ID}</td>
             <td><strong>${k.Nachname}</strong>, ${k.Vorname || ''}</td>
             <td>${k.Ort || '-'}</td>
@@ -80,83 +92,93 @@ window.openCustomerDetails = function(id) {
     const modal = document.getElementById('customer-modal');
     const content = document.getElementById('modal-content');
     
-    document.getElementById('modal-titel').innerText = `Kunden-Dossier: ${k.Nachname} (ID #${k.Kunden_ID})`;
+    // Hilfsfunktion für Auswahlfelder
+    const createOptions = (opts, selected) => {
+        return opts.map(o => `<option value="${o}" ${o === selected ? 'selected' : ''}>${o || '(leer)'}</option>`).join('');
+    };
+
+    const anreden = ['', 'Herr', 'Frau', 'Familie', 'Eheleute', 'Firma'];
+    const laender = ['Deutschland', 'Österreich', 'Schweiz', 'Niederlande', 'Belgien', 'Luxemburg', 'Frankreich', 'Italien', 'Dänemark', 'Polen', 'Tschechien'];
+    const nationalitaeten = ['Deutsch', 'Österreichisch', 'Schweizer', 'Niederländisch', 'Belgisch', 'Luxemburgisch', 'Französisch', 'Italienisch', 'Dänisch', 'Polnisch', 'Tschechisch'];
+
+    document.getElementById('modal-titel').innerText = `Kunden-Dossier: ${k.Nachname} (#${k.Kunden_ID})`;
 
     content.innerHTML = `
-        <div style="grid-column: span 2; display: flex; border-bottom: 1px solid #ddd; margin-bottom: 15px; background: #f4f4f4;">
-            <button onclick="window.showTab('tab-basis')" class="tab-btn active">Basisdaten</button>
-            <button onclick="window.showTab('tab-kontakt')" class="tab-btn">Kontakt</button>
-            <button onclick="window.showTab('tab-docs')" class="tab-btn">Dokumente</button>
-            <button onclick="window.showTab('tab-bank')" class="tab-btn">Bank & Zahlungsdaten</button>
-            <button onclick="window.showTab('tab-memo')" class="tab-btn">Historie & Intern</button>
-        </div>
-
-        <div id="tab-basis" class="tab-content active">
-            <label>Anrede</label><input type="text" id="edit-anrede" value="${k.Anrede || ''}">
-            <label>Vorname</label><input type="text" id="edit-vorname" value="${k.Vorname || ''}">
-            <label>Nachname *</label><input type="text" id="edit-nachname" value="${k.Nachname || ''}">
-            <label>Namenszusatz</label><input type="text" id="edit-zusatz" value="${k.Name_Zusatz || ''}">
-            <label>Geschlecht (M/W/D)</label><input type="text" id="edit-geschlecht" value="${k.Geschlecht || ''}">
-            <label>Geburtsdatum</label><input type="date" id="edit-geburt" value="${formatDate(k.Geburtsdatum)}">
-            <label>Nationalität</label><input type="text" id="edit-national" value="${k.Nationalitaet || ''}">
-            <label>System Kunden-ID</label><input type="text" value="${k.Kunden_ID}" disabled style="background:#eee;">
+        <div class="modal-layout-container" style="display: flex; gap: 20px; width: 100%;">
             
-            <div style="grid-column: span 2; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                <label style="color: #004a99; display: block; margin-bottom: 5px;">👨‍👩‍👧‍👦 Zugehörige Personen / Familie (Name, Geb., Pass)</label>
-                <textarea id="edit-zugehoerige" style="width: 100%; height: 80px; box-sizing: border-box;">${k.Zugehoerige_Personen || ''}</textarea>
+            <div style="flex: 1; min-width: 0; border-right: 1px solid #eee; padding-right: 15px;">
+                <div style="display: flex; background: #f4f4f4; margin-bottom: 10px;">
+                    <button onclick="window.showTab('tab-basis')" class="tab-btn active">Basis</button>
+                    <button onclick="window.showTab('tab-kontakt')" class="tab-btn">Kontakt</button>
+                    <button onclick="window.showTab('tab-docs')" class="tab-btn">Dokumente</button>
+                    <button onclick="window.showTab('tab-bank')" class="tab-btn">Bank</button>
+                </div>
+
+                <div id="tab-basis" class="tab-content active">
+                    <label>Anrede</label>
+                    <select id="edit-anrede">${createOptions(anreden, k.Anrede)}</select>
+                    
+                    <label>Vorname</label><input type="text" id="edit-vorname" value="${k.Vorname || ''}">
+                    <label>Nachname *</label><input type="text" id="edit-nachname" value="${k.Nachname || ''}">
+                    <label>Zusatz</label><input type="text" id="edit-zusatz" value="${k.Name_Zusatz || ''}">
+                    
+                    <label>Geburtsdatum</label><input type="date" id="edit-geburt" value="${formatDate(k.Geburtsdatum)}">
+                    
+                    <label>Nationalität</label>
+                    <select id="edit-national">${createOptions(nationalitaeten, k.Nationalitaet || 'Deutsch')}</select>
+                    
+                    <div style="grid-column: span 2; margin-top: 10px;">
+                        <label>👨‍👩‍👧‍👦 Zugehörige Personen / Familie</label>
+                        <textarea id="edit-zugehoerige" style="width:100%; height:60px;">${k.Zugehoerige_Personen || ''}</textarea>
+                    </div>
+                </div>
+
+                <div id="tab-kontakt" class="tab-content">
+                    <label>PLZ (Auto-Ort)</label><input type="text" id="edit-plz" maxlength="5" value="${k.PLZ || ''}" oninput="window.lookupPLZ(this.value)">
+                    <label>Ort</label><input type="text" id="edit-ort" value="${k.Ort || ''}">
+                    <label>Straße</label><input type="text" id="edit-strasse" value="${k.Strasse || ''}" style="grid-column: span 2;">
+                    <label>Land</label>
+                    <select id="edit-land" style="grid-column: span 2;">${createOptions(laender, k.Land || 'Deutschland')}</select>
+                    <hr style="grid-column: span 2;">
+                    <label>E-Mail</label><input type="email" id="edit-email" value="${k.Email || ''}" style="grid-column: span 2;">
+                    <label>Tel. Tag</label><input type="text" id="edit-teltag" value="${k.Telefon_Tag || ''}">
+                    <label>Mobil</label><input type="text" id="edit-mobil" value="${k.Mobil || ''}">
+                </div>
+
+                <div id="tab-docs" class="tab-content">
+                    <label>Pass-Nr.</label><input type="text" id="edit-passnr" value="${k.Pass_Nummer || ''}">
+                    <label>Gültig bis</label><input type="date" id="edit-passbis" value="${formatDate(k.Pass_Gueltig_Bis)}">
+                    <label>Ausstellungsort</label><input type="text" id="edit-passort" value="${k.Pass_Ausstellungsort || ''}" style="grid-column: span 2;">
+                </div>
+
+                <div id="tab-bank" class="tab-content">
+                    <label>Kontoinhaber</label><input type="text" id="edit-binhaber" value="${k.Bank_Kontoinhaber || ''}" style="grid-column: span 2;">
+                    <label>IBAN</label><input type="text" id="edit-iban" value="${k.Bank_IBAN || ''}" style="grid-column: span 2;">
+                    <label>BIC</label><input type="text" id="edit-bic" value="${k.Bank_BIC || ''}">
+                </div>
+            </div>
+
+            <div style="width: 300px; display: flex; flex-direction: column; gap: 15px;">
+                <div style="background: #fff8e1; padding: 10px; border: 1px solid #ffe082; border-radius: 4px;">
+                    <label style="font-weight: bold; color: #f57f17;">📢 Notizen / Bemerkungen</label>
+                    <textarea id="edit-memo" style="width: 100%; height: 100px; margin-top: 5px;">${k.Bemerkungen || ''}</textarea>
+                </div>
+                
+                <div style="background: #f1f8ff; padding: 10px; border: 1px solid #c8e1ff; border-radius: 4px;">
+                    <label style="font-weight: bold; color: #0366d6;">📜 Buchungshistorie</label>
+                    <textarea id="edit-alte" style="width: 100%; height: 150px; margin-top: 5px;">${k.Alte_Buchungen || ''}</textarea>
+                </div>
+
+                <div style="margin-top: auto; padding: 10px; background: #f9f9f9; border-radius: 4px; font-size: 0.8em;">
+                    <label><input type="checkbox" id="edit-mailing" ${k.Mailing_erlaubt ? 'checked' : ''}> Mailing erlaubt</label><br>
+                    <label><input type="checkbox" id="edit-freigabe" ${k.Kontaktdaten_freigegeben ? 'checked' : ''}> Kontaktfreigabe</label>
+                </div>
             </div>
         </div>
 
-        <div id="tab-kontakt" class="tab-content">
-            <label>Straße & Hausnr.</label><input type="text" id="edit-strasse" value="${k.Strasse || ''}">
-            <label>PLZ</label><input type="text" id="edit-plz" value="${k.PLZ || ''}">
-            <label>Ort</label><input type="text" id="edit-ort" value="${k.Ort || ''}">
-            <label>Land</label><input type="text" id="edit-land" value="${k.Land || 'Deutschland'}">
-            <hr style="grid-column: span 2; margin: 10px 0;">
-            <label>E-Mail</label><input type="email" id="edit-email" value="${k.Email || ''}">
-            <label>Telefon (Tag)</label><input type="text" id="edit-teltag" value="${k.Telefon_Tag || ''}">
-            <label>Telefon (Abend)</label><input type="text" id="edit-telabend" value="${k.Telefon_Abend || ''}">
-            <label>Mobiltelefon</label><input type="text" id="edit-mobil" value="${k.Mobil || ''}">
-        </div>
-
-        <div id="tab-docs" class="tab-content">
-            <label>Reisepass-Nr.</label><input type="text" id="edit-passnr" value="${k.Pass_Nummer || ''}">
-            <label>Gültig bis</label><input type="date" id="edit-passbis" value="${formatDate(k.Pass_Gueltig_Bis)}">
-            <label>Ausstellungsort</label><input type="text" id="edit-passort" value="${k.Pass_Ausstellungsort || ''}">
-            <label>Ausstellungsdatum</label><input type="date" id="edit-passvon" value="${formatDate(k.Pass_Ausstellungsdatum)}">
-        </div>
-
-        <div id="tab-bank" class="tab-content">
-            <label>Kontoinhaber</label><input type="text" id="edit-binhaber" value="${k.Bank_Kontoinhaber || ''}">
-            <label>Bank Name</label><input type="text" id="edit-bname" value="${k.Bank_Name || ''}">
-            <label>IBAN</label><input type="text" id="edit-iban" value="${k.Bank_IBAN || ''}">
-            <label>BIC</label><input type="text" id="edit-bic" value="${k.Bank_BIC || ''}">
-            <hr style="grid-column: span 2; margin: 10px 0;">
-            <label>KK Typ</label><input type="text" id="edit-kktyp" value="${k.KK_Typ || ''}">
-            <label>KK Inhaber</label><input type="text" id="edit-kkinhaber" value="${k.KK_Inhaber || ''}">
-            <label>KK Nr (Maskiert)</label><input type="text" id="edit-kknr" value="${k.KK_Nummer_Maskiert || ''}">
-            <label>KK Gültig bis</label><input type="text" id="edit-kkbis" value="${k.KK_Gueltig_Bis || ''}">
-        </div>
-
-        <div id="tab-memo" class="tab-content">
-            <label style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" id="edit-mailing" ${k.Mailing_erlaubt ? 'checked' : ''}> Mailing erlaubt
-            </label>
-            <label style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" id="edit-freigabe" ${k.Kontaktdaten_freigegeben ? 'checked' : ''}> Kontaktfreigabe
-            </label>
-            <label style="grid-column: span 2; margin-top:10px;">Bemerkungen</label>
-            <textarea id="edit-memo" style="grid-column: span 2; height: 60px;">${k.Bemerkungen || ''}</textarea>
-            <label style="grid-column: span 2;">Alte Buchungen / Historie</label>
-            <textarea id="edit-alte" style="grid-column: span 2; height: 100px;">${k.Alte_Buchungen || ''}</textarea>
-            <div style="grid-column: span 2; font-size: 0.8em; color: #777; margin-top: 15px;">
-                Erstellt: ${k.Erstellt_Am || '-'} | Update: ${k.Letztes_Update || '-'} | Access-ID: ${k.Access_ID || '-'}
-            </div>
-        </div>
-
-        <div style="grid-column: span 2; margin-top: 25px; border-top: 2px solid #eee; padding-top: 15px;">
-            <button onclick="window.saveCustomerChanges(${k.Kunden_ID})" class="btn-save" style="width:100%; padding:15px; font-size:1.1em;">
-                💾 Gesamtes Datenblatt in Azure SQL speichern
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee;">
+            <button onclick="window.saveCustomerChanges(${k.Kunden_ID})" class="btn-save" style="width:100%; padding:15px; font-weight:bold; background: #28a745; color: white; border: none; cursor: pointer;">
+                💾 Alle Daten in Azure SQL speichern
             </button>
         </div>
     `;
@@ -165,12 +187,12 @@ window.openCustomerDetails = function(id) {
         const style = document.createElement('style');
         style.id = 'tab-styles';
         style.innerHTML = `
-            .tab-btn { padding: 12px; cursor: pointer; border: none; background: #e0e0e0; flex: 1; border-right: 1px solid #ccc; font-weight: bold; }
-            .tab-btn.active { background: white; border-bottom: 3px solid #004a99; color: #004a99; }
-            .tab-content { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+            .tab-btn { padding: 10px; cursor: pointer; border: none; background: #e0e0e0; flex: 1; border-right: 1px solid #ccc; font-size: 13px; }
+            .tab-btn.active { background: white; border-bottom: 2px solid #004a99; font-weight: bold; }
+            .tab-content { display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
             .tab-content.active { display: grid; }
-            .tab-content label { font-size: 0.85em; font-weight: bold; color: #444; margin-bottom: -8px; }
-            .tab-content input, .tab-content textarea { padding: 10px; border: 1px solid #bbb; border-radius: 4px; font-size: 14px; }
+            .tab-content label { font-size: 11px; font-weight: bold; color: #666; margin-bottom: -5px; }
+            .tab-content input, .tab-content select, .tab-content textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
         `;
         document.head.appendChild(style);
     }
@@ -191,7 +213,6 @@ window.saveCustomerChanges = async function(id) {
         Vorname: document.getElementById('edit-vorname').value,
         Nachname: document.getElementById('edit-nachname').value,
         Name_Zusatz: document.getElementById('edit-zusatz').value,
-        Geschlecht: document.getElementById('edit-geschlecht').value,
         Geburtsdatum: document.getElementById('edit-geburt').value || null,
         Nationalitaet: document.getElementById('edit-national').value,
         Strasse: document.getElementById('edit-strasse').value,
@@ -200,25 +221,18 @@ window.saveCustomerChanges = async function(id) {
         Land: document.getElementById('edit-land').value,
         Email: document.getElementById('edit-email').value,
         Telefon_Tag: document.getElementById('edit-teltag').value,
-        Telefon_Abend: document.getElementById('edit-telabend').value,
         Mobil: document.getElementById('edit-mobil').value,
         Pass_Nummer: document.getElementById('edit-passnr').value,
         Pass_Gueltig_Bis: document.getElementById('edit-passbis').value || null,
         Pass_Ausstellungsort: document.getElementById('edit-passort').value,
-        Pass_Ausstellungsdatum: document.getElementById('edit-passvon').value || null,
         Bank_Kontoinhaber: document.getElementById('edit-binhaber').value,
-        Bank_Name: document.getElementById('edit-bname').value,
         Bank_IBAN: document.getElementById('edit-iban').value,
         Bank_BIC: document.getElementById('edit-bic').value,
-        KK_Typ: document.getElementById('edit-kktyp').value,
-        KK_Inhaber: document.getElementById('edit-kkinhaber').value,
-        KK_Nummer_Maskiert: document.getElementById('edit-kknr').value,
-        KK_Gueltig_Bis: document.getElementById('edit-kkbis').value,
         Bemerkungen: document.getElementById('edit-memo').value,
         Mailing_erlaubt: document.getElementById('edit-mailing').checked,
         Kontaktdaten_freigegeben: document.getElementById('edit-freigabe').checked,
         Alte_Buchungen: document.getElementById('edit-alte').value,
-        Zugehoerige_Personen: document.getElementById('edit-zugehoerige').value // <--- HIER eingefügt
+        Zugehoerige_Personen: document.getElementById('edit-zugehoerige').value
     };
 
     try {
@@ -228,7 +242,7 @@ window.saveCustomerChanges = async function(id) {
             headers: { 'Content-Type': 'application/json' }
         });
         if (res.ok) {
-            alert('Datenblatt erfolgreich gespeichert!');
+            alert('Datenblatt gespeichert!');
             document.getElementById('customer-modal').style.display = 'none';
             loadKunden();
         }
@@ -236,15 +250,13 @@ window.saveCustomerChanges = async function(id) {
 };
 
 // ---------------------------------------------------------
-// 3. SUCHE, NEUANLAGE & REISEN (REST)
+// 4. SUCHE & REISEN (REST)
 // ---------------------------------------------------------
-
 function handleKundenSuche(e) {
     const term = e.target.value.toLowerCase();
     const gefiltert = allKunden.filter(k => 
         (k.Nachname || "").toLowerCase().includes(term) || 
         (k.Vorname || "").toLowerCase().includes(term) || 
-        (k.Email || "").toLowerCase().includes(term) || 
         (k.Kunden_ID || "").toString().includes(term)
     );
     renderKundenTable(gefiltert);
@@ -252,9 +264,6 @@ function handleKundenSuche(e) {
 
 async function handleKundeSpeichern(e) {
     e.preventDefault();
-    const submitBtn = e.target.querySelector('button');
-    submitBtn.disabled = true;
-
     const neuerKunde = {
         Nachname: document.getElementById('k-nachname').value,
         Vorname: document.getElementById('k-vorname').value,
@@ -262,7 +271,6 @@ async function handleKundeSpeichern(e) {
         Ort: document.getElementById('k-ort').value,
         Access_ID: document.getElementById('k-accessid').value ? parseInt(document.getElementById('k-accessid').value) : null
     };
-
     try {
         const response = await fetch('/api/createKunde', {
             method: 'POST',
@@ -270,12 +278,11 @@ async function handleKundeSpeichern(e) {
             body: JSON.stringify(neuerKunde)
         });
         if (response.ok) {
-            alert('Kunde erfolgreich angelegt!');
+            alert('Kunde angelegt!');
             e.target.reset();
             loadKunden();
         }
     } catch (err) { console.error(err); }
-    finally { submitBtn.disabled = false; }
 }
 
 async function loadReisen() {
