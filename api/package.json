@@ -4,6 +4,7 @@
   "main": "src/functions/*.js",
   "dependencies": {
     "@azure/functions": "^4.0.0",
+    "mssql": "^12.2.1",
     "tedious": "^16.0.0"
   }
 }
