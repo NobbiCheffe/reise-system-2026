@@ -5,6 +5,10 @@
 
 let allKunden = [];
 
+function isValidEmail(email) {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+}
 // ---------------------------------------------------------
 // 1. INITIALISIERUNG & NAVIGATION
 // ---------------------------------------------------------
@@ -207,6 +211,16 @@ window.showTab = function(tabId) {
 };
 
 window.saveCustomerChanges = async function(id) {
+    const email = document.getElementById('edit-email').value;
+
+    // PRÜFUNG: Wenn eine E-Mail eingegeben wurde, muss sie gültig sein
+    if (email && !isValidEmail(email)) {
+        alert("⚠️ Die E-Mail-Adresse scheint nicht korrekt zu sein. Bitte prüfen!");
+        document.getElementById('edit-email').focus();
+        document.getElementById('edit-email').style.border = "2px solid red";
+        return; // Speichern abbrechen
+    }
+
     const data = {
         Kunden_ID: id,
         Anrede: document.getElementById('edit-anrede').value,
@@ -264,6 +278,14 @@ function handleKundenSuche(e) {
 
 async function handleKundeSpeichern(e) {
     e.preventDefault();
+    const email = document.getElementById('k-email').value;
+
+    if (email && !isValidEmail(email)) {
+        alert("⚠️ Bitte eine gültige E-Mail-Adresse angeben.");
+        document.getElementById('k-email').focus();
+        return;
+    }
+
     const neuerKunde = {
         Nachname: document.getElementById('k-nachname').value,
         Vorname: document.getElementById('k-vorname').value,
