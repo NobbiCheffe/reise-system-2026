@@ -1,19 +1,37 @@
 const { app } = require('@azure/functions');
+const sql = require('mssql');
 
 app.http('getKunden', {
     methods: ['GET'],
-    authLevel: 'anonymous',
+    authLevel: 'anonymous', // Wir stellen das später auf 'function' oder 'admin' um
     handler: async (request, context) => {
-        context.log(`Http-Funktion 'getKunden' wurde aufgerufen.`);
+        context.log(`API 'getKunden' aufgerufen.`);
 
-        const kunden = [
-            { id: "26-BW01-01", name: "Max Mustermann (API)", ort: "Bergisch Gladbach" },
-            { id: "26-BW01-02", name: "Erika Schmidt (API)", ort: "Köln" }
-        ];
+        try {
+            // Verbindung herstellen
+            await sql.connect(process.env.SQL_CONNECTION_STRING);
+            
+            // Abfrage mit den neuen Feldnamen
+            const result = await sql.query`
+                SELECT TOP 100 
+                    Kunden_ID, 
+                    Nachname, 
+                    Vorname, 
+                    Ort, 
+                    Email 
+                FROM Kunden 
+                ORDER BY Nachname ASC`;
 
-        return { 
-            jsonBody: kunden,
-            status: 200 
-        };
+            return { 
+                jsonBody: result.recordset,
+                status: 200 
+            };
+        } catch (err) {
+            context.log('SQL Fehler:', err);
+            return { 
+                status: 500, 
+                body: 'Datenbankfehler beim Laden der Kunden.' 
+            };
+        }
     }
 });

@@ -31,9 +31,12 @@ function renderTable(daten) {
     if (tableBody) {
         tableBody.innerHTML = daten.map(k => `
             <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${k.id}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">${k.name}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #eee;">${k.ort}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${k.Kunden_ID}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">
+                    ${k.Nachname}, ${k.Vorname || ''}
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${k.Ort || '-'}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee;">${k.Email || '-'}</td>
             </tr>
         `).join('');
     }
