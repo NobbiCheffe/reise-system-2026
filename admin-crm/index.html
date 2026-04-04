@@ -1,29 +1,28 @@
-<!DOCTYPE html>
-<html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bergauf CRM</title>
-  </head>
-  <body>
-    <div id="app" style="font-family: sans-serif; padding: 20px;">
-      <h1>Bergauf Reise-Management</h1>
-      <nav style="margin-bottom: 20px;">
-        <strong>Kundenverwaltung</strong> | Buchungs-System | Rooming-Lists
-      </nav>
-      <table border="1" style="width:100%; border-collapse: collapse;">
+<nav style="margin-bottom: 20px; padding: 10px; background: #f4f4f4; border-radius: 8px;">
+    <button onclick="showSection('kunden')" style="padding: 10px 20px; cursor: pointer;">👥 Kunden</button>
+    <button onclick="showSection('reisen')" style="padding: 10px 20px; cursor: pointer;">🏔️ Reisen</button>
+</nav>
+
+<div id="section-kunden">
+    <h2>Kundenverwaltung</h2>
+    <table border="1" style="width:100%; border-collapse: collapse;">
         <thead>
-          <tr style="background-color: #f2f2f2;">
-            <th style="padding: 10px; text-align: left;">ID</th>
-            <th style="padding: 10px; text-align: left;">Name</th>
-            <th style="padding: 10px; text-align: left;">Ort</th>
-          </tr>
+            <tr style="background: #eee;">
+                <th>ID</th><th>Name</th><th>Ort</th><th>Email</th>
+            </tr>
         </thead>
-        <tbody id="kunden-daten">
-          <tr><td colspan="3" style="padding: 10px;">Suche Daten in Bergisch Gladbach...</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html>
+        <tbody id="kunden-daten"></tbody>
+    </table>
+</div>
+
+<div id="section-reisen" style="display:none;">
+    <h2>Reiseverwaltung</h2>
+    <table border="1" style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: #eee;">
+                <th>Reise-ID</th><th>Titel</th><th>Zeitraum</th><th>Preis</th><th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="reisen-daten"></tbody>
+    </table>
+</div>
