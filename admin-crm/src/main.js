@@ -1,36 +1,39 @@
-// Navigation umschalten
-window.showSection = function(section) {
-    document.getElementById('section-kunden').style.display = section === 'kunden' ? 'block' : 'none';
-    document.getElementById('section-reisen').style.display = section === 'reisen' ? 'block' : 'none';
+// Sektionen umschalten
+function showSection(name) {
+    const kSec = document.getElementById('section-kunden');
+    const rSec = document.getElementById('section-reisen');
     
-    if (section === 'reisen') loadReisen();
-    else loadKunden();
-}
-
-async function loadReisen() {
-    try {
-        const response = await fetch('/api/getReisen');
-        const reisen = await response.json();
-        renderReisenTable(reisen);
-    } catch (err) {
-        console.error("Fehler beim Laden der Reisen:", err);
+    if (name === 'reisen') {
+        kSec.style.display = 'none';
+        rSec.style.display = 'block';
+        loadReisen();
+    } else {
+        kSec.style.display = 'block';
+        rSec.style.display = 'none';
+        loadKunden();
     }
 }
 
-function renderReisenTable(reisen) {
-    const tableBody = document.querySelector('#reisen-daten');
-    tableBody.innerHTML = reisen.map(r => `
-        <tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${r.Reise_ID}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; font-weight: bold;">${r.Titel}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${r.Start} - ${r.Ende}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">${r.Verkaufspreis} €</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee;">
-                <span style="background: #e0f0ff; padding: 2px 6px; border-radius: 4px;">${r.Status}</span>
-            </td>
-        </tr>
-    `).join('');
+// Daten laden
+async function loadKunden() {
+    const res = await fetch('/api/getKunden');
+    const data = await res.json();
+    document.getElementById('kunden-daten').innerHTML = data.map(k => 
+        `<tr><td>${k.Kunden_ID}</td><td>${k.Nachname}</td><td>${k.Ort}</td></tr>`
+    ).join('');
 }
 
-// Beim Start Kunden laden
-loadKunden();
+async function loadReisen() {
+    const res = await fetch('/api/getReisen');
+    const data = await res.json();
+    document.getElementById('reisen-daten').innerHTML = data.map(r => 
+        `<tr><td>${r.Reise_ID}</td><td>${r.Titel}</td><td>${r.Start}</td><td>${r.Verkaufspreis} €</td></tr>`
+    ).join('');
+}
+
+// Event Listener binden (Der Vite-Weg)
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-kunden').addEventListener('click', () => showSection('kunden'));
+    document.getElementById('btn-reisen').addEventListener('click', () => showSection('reisen'));
+    loadKunden(); // Start mit Kunden
+});

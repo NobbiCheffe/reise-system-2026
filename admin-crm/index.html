@@ -1,28 +1,34 @@
-<nav style="margin-bottom: 20px; padding: 10px; background: #f4f4f4; border-radius: 8px;">
-    <button onclick="showSection('kunden')" style="padding: 10px 20px; cursor: pointer;">👥 Kunden</button>
-    <button onclick="showSection('reisen')" style="padding: 10px 20px; cursor: pointer;">🏔️ Reisen</button>
-</nav>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bergauf CRM</title>
+</head>
+<body>
+    <div id="app">
+        <h1>Bergauf Reise-Management</h1>
+        
+        <nav style="margin-bottom: 20px;">
+            <button id="btn-kunden" style="padding: 10px;">👥 Kunden</button>
+            <button id="btn-reisen" style="padding: 10px;">🏔️ Reisen</button>
+        </nav>
 
-<div id="section-kunden">
-    <h2>Kundenverwaltung</h2>
-    <table border="1" style="width:100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #eee;">
-                <th>ID</th><th>Name</th><th>Ort</th><th>Email</th>
-            </tr>
-        </thead>
-        <tbody id="kunden-daten"></tbody>
-    </table>
-</div>
+        <div id="section-kunden">
+            <h2>Kundenverwaltung</h2>
+            <table border="1" style="width:100%;">
+                <thead><tr><th>ID</th><th>Name</th><th>Ort</th></tr></thead>
+                <tbody id="kunden-daten"></tbody>
+            </table>
+        </div>
 
-<div id="section-reisen" style="display:none;">
-    <h2>Reiseverwaltung</h2>
-    <table border="1" style="width:100%; border-collapse: collapse;">
-        <thead>
-            <tr style="background: #eee;">
-                <th>Reise-ID</th><th>Titel</th><th>Zeitraum</th><th>Preis</th><th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="reisen-daten"></tbody>
-    </table>
-</div>
+        <div id="section-reisen" style="display:none;">
+            <h2>Reiseverwaltung</h2>
+            <table border="1" style="width:100%;">
+                <thead><tr><th>ID</th><th>Titel</th><th>Datum</th><th>Preis</th></tr></thead>
+                <tbody id="reisen-daten"></tbody>
+            </table>
+        </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
