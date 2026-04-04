@@ -43,6 +43,7 @@ app.http('updateKunde', {
                 .input('mailing', sql.Bit, data.Mailing_erlaubt ? 1 : 0)
                 .input('freigabe', sql.Bit, data.Kontaktdaten_freigegeben ? 1 : 0)
                 .input('alte_buchungen', sql.NVarChar, data.Alte_Buchungen || null)
+                .input('zugehoerige', sql.NVarChar, data.Zugehoerige_Personen || null)
                 .query(`
                     UPDATE Kunden SET 
                         Access_ID=@access_id, Anrede=@anrede, Vorname=@vorname, Nachname=@nachname, Name_Zusatz=@zusatz, Geschlecht=@geschlecht,
@@ -51,7 +52,7 @@ app.http('updateKunde', {
                         Pass_Nummer=@pass_nr, Pass_Gueltig_Bis=@pass_bis, Pass_Ausstellungsort=@pass_ort, Pass_Ausstellungsdatum=@pass_von,
                         Bank_Kontoinhaber=@b_inhaber, Bank_Name=@b_name, Bank_IBAN=@b_iban, Bank_BIC=@b_bic,
                         KK_Typ=@kk_typ, KK_Inhaber=@kk_inhaber, KK_Nummer_Maskiert=@kk_nr, KK_Gueltig_Bis=@kk_bis,
-                        Bemerkungen=@bemerkungen, Mailing_erlaubt=@mailing, Kontaktdaten_freigegeben=@freigabe, Alte_Buchungen=@alte_buchungen,
+                        Bemerkungen=@bemerkungen, Mailing_erlaubt=@mailing, Kontaktdaten_freigegeben=@freigabe, Alte_Buchungen=@alte_buchungen,Zugehoerige_Personen=@zugehoerige,
                         Letztes_Update=GETDATE()
                     WHERE Kunden_ID=@id
                 `);

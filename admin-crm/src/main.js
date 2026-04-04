@@ -1,6 +1,6 @@
 /**
  * Bergauf CRM - Master Control (main.js)
- * Stand: April 2026
+ * Stand: April 2026 - Inklusive Familien-Feld (Weg A)
  */
 
 let allKunden = [];
@@ -11,15 +11,11 @@ let allKunden = [];
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Bergauf CRM Zentrale wird hochgefahren...");
 
-    // Haupt-Navigation
     document.getElementById('btn-kunden').addEventListener('click', () => showSection('kunden'));
     document.getElementById('btn-reisen').addEventListener('click', () => showSection('reisen'));
-
-    // Suche & Neuanlage-Formular
     document.getElementById('kunden-suche').addEventListener('input', handleKundenSuche);
     document.getElementById('kunde-form').addEventListener('submit', handleKundeSpeichern);
 
-    // Modal Schließen (X-Button)
     const closeModal = document.getElementById('close-modal');
     if (closeModal) {
         closeModal.addEventListener('click', () => {
@@ -27,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialer Ladevorgang
     loadKunden();
 });
 
@@ -45,14 +40,13 @@ function showSection(sectionName) {
     }
 }
 
-// Hilfsfunktion: SQL-Datum (ISO) in HTML-Datum (YYYY-MM-DD) umwandeln
 function formatDate(isoString) {
     if (!isoString) return '';
     return isoString.split('T')[0];
 }
 
 // ---------------------------------------------------------
-// 2. KUNDEN-VERWALTUNG (DATENBLATT & EDIT)
+// 2. KUNDEN-VERWALTUNG & DATENBLATT
 // ---------------------------------------------------------
 
 async function loadKunden() {
@@ -79,7 +73,6 @@ function renderKundenTable(daten) {
     `).join('');
 }
 
-// Das große Datenblatt öffnen (Global für Vite/HTML)
 window.openCustomerDetails = function(id) {
     const k = allKunden.find(kunde => kunde.Kunden_ID === id);
     if (!k) return;
@@ -107,6 +100,11 @@ window.openCustomerDetails = function(id) {
             <label>Geburtsdatum</label><input type="date" id="edit-geburt" value="${formatDate(k.Geburtsdatum)}">
             <label>Nationalität</label><input type="text" id="edit-national" value="${k.Nationalitaet || ''}">
             <label>System Kunden-ID</label><input type="text" value="${k.Kunden_ID}" disabled style="background:#eee;">
+            
+            <div style="grid-column: span 2; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                <label style="color: #004a99; display: block; margin-bottom: 5px;">👨‍👩‍👧‍👦 Zugehörige Personen / Familie (Name, Geb., Pass)</label>
+                <textarea id="edit-zugehoerige" style="width: 100%; height: 80px; box-sizing: border-box;">${k.Zugehoerige_Personen || ''}</textarea>
+            </div>
         </div>
 
         <div id="tab-kontakt" class="tab-content">
@@ -145,14 +143,14 @@ window.openCustomerDetails = function(id) {
                 <input type="checkbox" id="edit-mailing" ${k.Mailing_erlaubt ? 'checked' : ''}> Mailing erlaubt
             </label>
             <label style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" id="edit-freigabe" ${k.Kontaktdaten_freigegeben ? 'checked' : ''}> Kontaktfreigabe (Fahrgem.)
+                <input type="checkbox" id="edit-freigabe" ${k.Kontaktdaten_freigegeben ? 'checked' : ''}> Kontaktfreigabe
             </label>
             <label style="grid-column: span 2; margin-top:10px;">Bemerkungen</label>
             <textarea id="edit-memo" style="grid-column: span 2; height: 60px;">${k.Bemerkungen || ''}</textarea>
             <label style="grid-column: span 2;">Alte Buchungen / Historie</label>
             <textarea id="edit-alte" style="grid-column: span 2; height: 100px;">${k.Alte_Buchungen || ''}</textarea>
-            <div style="grid-column: span 2; font-size: 0.8em; color: #777; margin-top: 15px; border-top: 1px solid #eee; padding-top: 5px;">
-                Erstellt am: ${k.Erstellt_Am || '-'} | Letztes Update: ${k.Letztes_Update || '-'} | Access-ID: ${k.Access_ID || '-'}
+            <div style="grid-column: span 2; font-size: 0.8em; color: #777; margin-top: 15px;">
+                Erstellt: ${k.Erstellt_Am || '-'} | Update: ${k.Letztes_Update || '-'} | Access-ID: ${k.Access_ID || '-'}
             </div>
         </div>
 
@@ -163,26 +161,22 @@ window.openCustomerDetails = function(id) {
         </div>
     `;
 
-    // CSS für die Tabs (einmalig einfügen)
     if(!document.getElementById('tab-styles')) {
         const style = document.createElement('style');
         style.id = 'tab-styles';
         style.innerHTML = `
-            .tab-btn { padding: 12px; cursor: pointer; border: none; background: #e0e0e0; flex: 1; transition: 0.2s; border-right: 1px solid #ccc; font-weight: bold; }
+            .tab-btn { padding: 12px; cursor: pointer; border: none; background: #e0e0e0; flex: 1; border-right: 1px solid #ccc; font-weight: bold; }
             .tab-btn.active { background: white; border-bottom: 3px solid #004a99; color: #004a99; }
             .tab-content { display: none; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
             .tab-content.active { display: grid; }
             .tab-content label { font-size: 0.85em; font-weight: bold; color: #444; margin-bottom: -8px; }
             .tab-content input, .tab-content textarea { padding: 10px; border: 1px solid #bbb; border-radius: 4px; font-size: 14px; }
-            .tab-content input:focus { border-color: #004a99; outline: none; background: #fdfdfd; }
         `;
         document.head.appendChild(style);
     }
-    
     modal.style.display = 'block';
 };
 
-// Tab-Umschaltung
 window.showTab = function(tabId) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -190,7 +184,6 @@ window.showTab = function(tabId) {
     event.currentTarget.classList.add('active');
 };
 
-// Update an die API senden
 window.saveCustomerChanges = async function(id) {
     const data = {
         Kunden_ID: id,
@@ -224,7 +217,8 @@ window.saveCustomerChanges = async function(id) {
         Bemerkungen: document.getElementById('edit-memo').value,
         Mailing_erlaubt: document.getElementById('edit-mailing').checked,
         Kontaktdaten_freigegeben: document.getElementById('edit-freigabe').checked,
-        Alte_Buchungen: document.getElementById('edit-alte').value
+        Alte_Buchungen: document.getElementById('edit-alte').value,
+        Zugehoerige_Personen: document.getElementById('edit-zugehoerige').value // <--- HIER eingefügt
     };
 
     try {
@@ -237,16 +231,12 @@ window.saveCustomerChanges = async function(id) {
             alert('Datenblatt erfolgreich gespeichert!');
             document.getElementById('customer-modal').style.display = 'none';
             loadKunden();
-        } else {
-            alert('Fehler beim Speichern in der Datenbank.');
         }
-    } catch (err) {
-        console.error("Netzwerkfehler beim Update:", err);
-    }
+    } catch (err) { console.error(err); }
 };
 
 // ---------------------------------------------------------
-// 3. SUCHE & NEUANLAGE
+// 3. SUCHE, NEUANLAGE & REISEN (REST)
 // ---------------------------------------------------------
 
 function handleKundenSuche(e) {
@@ -288,29 +278,17 @@ async function handleKundeSpeichern(e) {
     finally { submitBtn.disabled = false; }
 }
 
-// ---------------------------------------------------------
-// 4. REISEN-VERWALTUNG
-// ---------------------------------------------------------
-
 async function loadReisen() {
     try {
         const response = await fetch('/api/getReisen');
         const reisen = await response.json();
         renderReisenTable(reisen);
-    } catch (err) {
-        console.error("Fehler beim Laden der Reisen:", err);
-    }
+    } catch (err) { console.error(err); }
 }
 
 function renderReisenTable(reisen) {
     const tableBody = document.getElementById('reisen-daten');
     if (!tableBody) return;
-
-    if (reisen.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Keine Reisen gefunden.</td></tr>';
-        return;
-    }
-
     tableBody.innerHTML = reisen.map(r => `
         <tr>
             <td>${r.Reise_ID}</td>

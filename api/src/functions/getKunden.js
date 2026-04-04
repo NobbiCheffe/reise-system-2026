@@ -19,7 +19,8 @@ app.http('getKunden', {
                 Bank_Kontoinhaber, Bank_Name, Bank_IBAN, Bank_BIC,
                 KK_Typ, KK_Inhaber, KK_Nummer_Maskiert, KK_Gueltig_Bis,
                 Bemerkungen, Erstellt_Am, Letztes_Update,
-                Mailing_erlaubt, Kontaktdaten_freigegeben, Alte_Buchungen
+                Mailing_erlaubt, Kontaktdaten_freigegeben, Alte_Buchungen,
+                Zugehoerige_Personen
             FROM Kunden 
             ORDER BY Nachname ASC`;
 
