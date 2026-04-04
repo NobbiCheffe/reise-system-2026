@@ -152,22 +152,45 @@ async function loadReisen() {
     }
 }
 
-function renderReisenTable(reisen) {
-    const tableBody = document.getElementById('reisen-daten');
+// Funktion zum Anzeigen der Details
+function openCustomerDetails(kundenId) {
+    const kunde = allKunden.find(k => k.Kunden_ID === kundenId);
+    if (!kunde) return;
+
+    const modal = document.getElementById('customer-modal');
+    const content = document.getElementById('modal-content');
+    
+    document.getElementById('modal-titel').innerText = `Datenblatt: ${kunde.Nachname}, ${kunde.Vorname || ''}`;
+
+    // Alle Felder schön aufbereitet anzeigen
+    content.innerHTML = `
+        <div><strong>Kunden-ID:</strong><br> ${kunde.Kunden_ID}</div>
+        <div><strong>Alte Access-ID:</strong><br> ${kunde.Access_ID || '---'}</div>
+        <div><strong>Anrede:</strong><br> ${kunde.Anrede || '---'}</div>
+        <div><strong>E-Mail:</strong><br> ${kunde.Email || '---'}</div>
+        <div><strong>Straße:</strong><br> ${kunde.Strasse || '---'}</div>
+        <div><strong>PLZ / Ort:</strong><br> ${kunde.PLZ || ''} ${kunde.Ort || ''}</div>
+    `;
+
+    modal.style.display = 'block';
+}
+
+// Tabellen-Ansicht aktualisieren (jetzt mit Klick-Funktion)
+function renderKundenTable(daten) {
+    const tableBody = document.getElementById('kunden-daten');
     if (!tableBody) return;
 
-    if (reisen.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px;">Keine Reisen geplant.</td></tr>';
-        return;
-    }
-
-    tableBody.innerHTML = reisen.map(r => `
-        <tr>
-            <td>${r.Reise_ID}</td>
-            <td><strong>${r.Titel}</strong><br><small>${r.Zielort || ''}</small></td>
-            <td>${r.Start} - ${r.Ende}</td>
-            <td>${r.Verkaufspreis ? r.Verkaufspreis.toLocaleString('de-DE', {style: 'currency', currency: 'EUR'}) : '-'}</td>
-            <td><span class="status-badge">${r.Status || 'Geplant'}</span></td>
+    tableBody.innerHTML = daten.map(k => `
+        <tr onclick="openCustomerDetails(${k.Kunden_ID})" style="cursor: pointer;" title="Klicken für Details">
+            <td>${k.Kunden_ID}</td>
+            <td><strong>${k.Nachname}</strong>, ${k.Vorname || ''}</td>
+            <td>${k.Ort || '-'}</td>
+            <td>${k.Email || '-'}</td>
         </tr>
     `).join('');
 }
+
+// Schließen-Event für das Modal
+document.getElementById('close-modal').addEventListener('click', () => {
+    document.getElementById('customer-modal').style.display = 'none';
+});
