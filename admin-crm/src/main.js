@@ -1,36 +1,37 @@
 /**
- * Bergauf CRM - Hauptlogik (main.js)
+ * Bergauf CRM - Vollständige Hauptlogik (main.js)
  */
 
-// Globaler Speicher, damit die Suche blitzschnell ohne Server-Anfrage funktioniert
 let allKunden = [];
 
 // 1. INITIALISIERUNG
 // ---------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Bergauf CRM geladen. Starte Initialisierung...");
+    console.log("Bergauf CRM geladen...");
 
-    // Event Listener für die Navigation
+    // Navigation
     document.getElementById('btn-kunden').addEventListener('click', () => showSection('kunden'));
     document.getElementById('btn-reisen').addEventListener('click', () => showSection('reisen'));
 
-    // Event Listener für die Kundensuche
+    // Suche & Formular
     document.getElementById('kunden-suche').addEventListener('input', handleKundenSuche);
-
-    // Event Listener für das Kunden-Formular (Neuanlage)
     document.getElementById('kunde-form').addEventListener('submit', handleKundeSpeichern);
 
-    // Startansicht: Kunden laden
+    // Modal Schließen-Button
+    const closeModal = document.getElementById('close-modal');
+    if (closeModal) {
+        closeModal.addEventListener('click', () => {
+            document.getElementById('customer-modal').style.display = 'none';
+        });
+    }
+
+    // Start-Ansicht
     loadKunden();
 });
 
-
-// 2. NAVIGATION & SEKTIONEN
-// ---------------------------------------------------------
 function showSection(sectionName) {
     const kundenSec = document.getElementById('section-kunden');
     const reisenSec = document.getElementById('section-reisen');
-
     if (sectionName === 'reisen') {
         kundenSec.classList.remove('active');
         reisenSec.classList.add('active');
@@ -42,35 +43,27 @@ function showSection(sectionName) {
     }
 }
 
-
-// 3. KUNDEN-LOGIK
+// 2. KUNDEN-LOGIK & MODAL (GLOBAL FÜR VITE)
 // ---------------------------------------------------------
 
-// Kunden von der API abrufen
+// Lädt die Kundenliste
 async function loadKunden() {
     try {
         const response = await fetch('/api/getKunden');
-        if (!response.ok) throw new Error('Fehler beim Laden der Kunden');
-        
         allKunden = await response.json();
         renderKundenTable(allKunden);
     } catch (err) {
-        console.error("API Fehler (Kunden):", err);
+        console.error("Fehler beim Laden der Kunden:", err);
     }
 }
 
-// Kunden in die Tabelle schreiben
+// Rendert die Tabelle
 function renderKundenTable(daten) {
     const tableBody = document.getElementById('kunden-daten');
     if (!tableBody) return;
 
-    if (daten.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Keine Kunden gefunden.</td></tr>';
-        return;
-    }
-
     tableBody.innerHTML = daten.map(k => `
-        <tr>
+        <tr onclick="window.openCustomerDetails(${k.Kunden_ID})" style="cursor: pointer;" title="Klicken für Datenblatt">
             <td>${k.Kunden_ID}</td>
             <td><strong>${k.Nachname}</strong>, ${k.Vorname || ''}</td>
             <td>${k.Ort || '-'}</td>
@@ -79,35 +72,83 @@ function renderKundenTable(daten) {
     `).join('');
 }
 
-// Suchfunktion (Filtert den globalen Speicher allKunden)
+// Das "Geheimnis" für Vite: Funktionen an window hängen
+window.openCustomerDetails = function(id) {
+    const kunde = allKunden.find(k => k.Kunden_ID === id);
+    if (!kunde) return;
+
+    const modal = document.getElementById('customer-modal');
+    const content = document.getElementById('modal-content');
+    
+    document.getElementById('modal-titel').innerText = `Datenblatt: ${kunde.Nachname}`;
+
+    content.innerHTML = `
+        <div style="display:flex; flex-direction:column;"><label>Vorname</label><input type="text" id="edit-vorname" value="${kunde.Vorname || ''}"></div>
+        <div style="display:flex; flex-direction:column;"><label>Nachname</label><input type="text" id="edit-nachname" value="${kunde.Nachname || ''}"></div>
+        <div style="display:flex; flex-direction:column;"><label>E-Mail</label><input type="email" id="edit-email" value="${kunde.Email || ''}"></div>
+        <div style="display:flex; flex-direction:column;"><label>Ort</label><input type="text" id="edit-ort" value="${kunde.Ort || ''}"></div>
+        <div style="display:flex; flex-direction:column;"><label>Straße</label><input type="text" id="edit-strasse" value="${kunde.Strasse || ''}"></div>
+        <div style="display:flex; flex-direction:column;"><label>PLZ</label><input type="text" id="edit-plz" value="${kunde.PLZ || ''}"></div>
+        <div style="grid-column: span 2; margin-top: 20px;">
+            <button onclick="window.saveCustomerChanges(${kunde.Kunden_ID})" 
+                    style="width:100%; padding:15px; background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
+                💾 Änderungen speichern
+            </button>
+        </div>
+    `;
+    modal.style.display = 'block';
+};
+
+window.saveCustomerChanges = async function(id) {
+    const updatedData = {
+        Kunden_ID: id,
+        Vorname: document.getElementById('edit-vorname').value,
+        Nachname: document.getElementById('edit-nachname').value,
+        Email: document.getElementById('edit-email').value,
+        Ort: document.getElementById('edit-ort').value,
+        Strasse: document.getElementById('edit-strasse').value,
+        PLZ: document.getElementById('edit-plz').value
+    };
+
+    try {
+        const response = await fetch('/api/updateKunde', {
+            method: 'POST',
+            body: JSON.stringify(updatedData),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            alert('Daten erfolgreich aktualisiert!');
+            document.getElementById('customer-modal').style.display = 'none';
+            loadKunden();
+        } else {
+            alert('Fehler beim Speichern der Änderungen.');
+        }
+    } catch (err) {
+        console.error("Update Fehler:", err);
+    }
+};
+
+// Suche
 function handleKundenSuche(e) {
     const term = e.target.value.toLowerCase();
-    
-    const gefiltert = allKunden.filter(k => {
-        return (k.Nachname || "").toLowerCase().includes(term) ||
-               (k.Vorname || "").toLowerCase().includes(term) ||
-               (k.Email || "").toLowerCase().includes(term) ||
-               (k.Kunden_ID || "").toString().includes(term);
-    });
-
+    const gefiltert = allKunden.filter(k => 
+        (k.Nachname || "").toLowerCase().includes(term) || 
+        (k.Kunden_ID || "").toString().includes(term)
+    );
     renderKundenTable(gefiltert);
 }
 
-// Neuen Kunden an die API senden
+// Neuanlage
 async function handleKundeSpeichern(e) {
     e.preventDefault();
-    
     const submitBtn = e.target.querySelector('button');
     submitBtn.disabled = true;
-    submitBtn.innerText = 'Speichere...';
 
     const neuerKunde = {
-        Anrede: document.getElementById('k-anrede').value,
-        Vorname: document.getElementById('k-vorname').value,
         Nachname: document.getElementById('k-nachname').value,
+        Vorname: document.getElementById('k-vorname').value,
         Email: document.getElementById('k-email').value,
-        Strasse: document.getElementById('k-strasse').value,
-        PLZ: document.getElementById('k-plz').value,
         Ort: document.getElementById('k-ort').value,
         Access_ID: document.getElementById('k-accessid').value ? parseInt(document.getElementById('k-accessid').value) : null
     };
@@ -118,33 +159,22 @@ async function handleKundeSpeichern(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(neuerKunde)
         });
-
         if (response.ok) {
-            alert('Kunde erfolgreich angelegt!');
-            e.target.reset(); // Formular leeren
-            loadKunden();     // Liste aktualisieren
-        } else {
-            const errorText = await response.text();
-            alert('Fehler beim Speichern: ' + errorText);
+            alert('Kunde angelegt!');
+            e.target.reset();
+            loadKunden();
         }
-    } catch (err) {
-        console.error("Sende-Fehler:", err);
-        alert('Netzwerkfehler beim Speichern.');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerText = 'Kunde in Datenbank speichern';
-    }
+    } catch (err) { console.error(err); }
+    finally { submitBtn.disabled = false; }
 }
 
 
-// 4. REISEN-LOGIK
+// 3. REISEN-LOGIK (WICHTIG: DARF NICHT FEHLEN!)
 // ---------------------------------------------------------
-
 async function loadReisen() {
     try {
         const response = await fetch('/api/getReisen');
-        if (!response.ok) throw new Error('Fehler beim Laden der Reisen');
-        
+        if (!response.ok) throw new Error('Fehler');
         const reisen = await response.json();
         renderReisenTable(reisen);
     } catch (err) {
@@ -152,45 +182,22 @@ async function loadReisen() {
     }
 }
 
-// Funktion zum Anzeigen der Details
-function openCustomerDetails(kundenId) {
-    const kunde = allKunden.find(k => k.Kunden_ID === kundenId);
-    if (!kunde) return;
-
-    const modal = document.getElementById('customer-modal');
-    const content = document.getElementById('modal-content');
-    
-    document.getElementById('modal-titel').innerText = `Datenblatt: ${kunde.Nachname}, ${kunde.Vorname || ''}`;
-
-    // Alle Felder schön aufbereitet anzeigen
-    content.innerHTML = `
-        <div><strong>Kunden-ID:</strong><br> ${kunde.Kunden_ID}</div>
-        <div><strong>Alte Access-ID:</strong><br> ${kunde.Access_ID || '---'}</div>
-        <div><strong>Anrede:</strong><br> ${kunde.Anrede || '---'}</div>
-        <div><strong>E-Mail:</strong><br> ${kunde.Email || '---'}</div>
-        <div><strong>Straße:</strong><br> ${kunde.Strasse || '---'}</div>
-        <div><strong>PLZ / Ort:</strong><br> ${kunde.PLZ || ''} ${kunde.Ort || ''}</div>
-    `;
-
-    modal.style.display = 'block';
-}
-
-// Tabellen-Ansicht aktualisieren (jetzt mit Klick-Funktion)
-function renderKundenTable(daten) {
-    const tableBody = document.getElementById('kunden-daten');
+function renderReisenTable(reisen) {
+    const tableBody = document.getElementById('reisen-daten');
     if (!tableBody) return;
 
-    tableBody.innerHTML = daten.map(k => `
-        <tr onclick="openCustomerDetails(${k.Kunden_ID})" style="cursor: pointer;" title="Klicken für Details">
-            <td>${k.Kunden_ID}</td>
-            <td><strong>${k.Nachname}</strong>, ${k.Vorname || ''}</td>
-            <td>${k.Ort || '-'}</td>
-            <td>${k.Email || '-'}</td>
+    if (reisen.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Keine Reisen gefunden.</td></tr>';
+        return;
+    }
+
+    tableBody.innerHTML = reisen.map(r => `
+        <tr>
+            <td>${r.Reise_ID}</td>
+            <td><strong>${r.Titel}</strong></td>
+            <td>${r.Start} - ${r.Ende}</td>
+            <td>${r.Verkaufspreis ? r.Verkaufspreis.toLocaleString('de-DE', {style: 'currency', currency: 'EUR'}) : '-'}</td>
+            <td>${r.Status || 'Geplant'}</td>
         </tr>
     `).join('');
 }
-
-// Schließen-Event für das Modal
-document.getElementById('close-modal').addEventListener('click', () => {
-    document.getElementById('customer-modal').style.display = 'none';
-});
